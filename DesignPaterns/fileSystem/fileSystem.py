@@ -1,17 +1,19 @@
+from file import File
 from directory import Directory
 
 class FileSystem:
   def __init__(self):
-    self.rootDirectory = Directory('/', 'rw-r--r--')
+    self.rootDirectory = Directory('/', 'r--r--r--')
     self.currentDirectory = self.rootDirectory
     pass
 
-  # Find directory and make it the current one
+  # Find directory and set it as the current one
   def cd(self, path):
     pass
 
-  # makes a directory in this one
+  # makes a directory inside the current directory
   def mkdir(self, name):
+    directory = Directory(name)
     pass
 
   # Updates the UpdatedAt field of a file

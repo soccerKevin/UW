@@ -10,7 +10,11 @@ class Bitmap:
 
   # Returns the index of the first available block
   def getFirstAvailableBlock(self):
+    # returns the first 0 in the bit array
     pass
 
-  def setBlockEmpty(self, block)
+  # sets the blockIndex bit to 0
+  def setBlockEmpty(self, blockIndex)
     pass
+
+bitmap = Bitmap()
