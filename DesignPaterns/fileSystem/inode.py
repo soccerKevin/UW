@@ -10,6 +10,8 @@ from config import BLOCK_SIZE
 #   current user can read/write/execute,
 #   the group can read/execute,
 #   anyone can read
+# addresses
+#  array of startingBitIndexes in memory (start of each block)
 # createdAt
 # updatedAt
 class INode:
@@ -19,8 +21,7 @@ class INode:
     self.fileSize = fileSize
     self.uid = uid
     self.permissions = permissions
-    # array of startingBitIndexes in memory (start of each block)
-    self.address = []
+    self.addresses = []
     self.createdAt = datetime.now()
     self.updatedAt = datetime.now()
 
@@ -28,6 +29,9 @@ class INode:
   # saves where the block in memory starts
   def addMemoryAddress(self, startingBitIndex):
     self.address.push(startingBitIndex)
+
+  def getMemoryAddresses(self):
+    return self.addresses
 
   # updates the size of the file
   def setFileSize(self, size):

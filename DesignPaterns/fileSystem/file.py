@@ -1,17 +1,24 @@
 from memory import memory
 from stream import Stream
 from inode import INode
-from bitmap import bitmap
+
+# Open/Closed Principle
+#  subclass (Directory)
+#  directory shouldn't override methods in File
 
 # A File is 2 parts, the inode (metadata) and some space/content in memory
 # contains methods to work with
 class File:
-  def __init__(self, name):
+  # private constructor
+  # use create, createFromInode
+  def __init__(self, inode):
     self.inode = inode
 
   # writes bits to memory
-  def write(self, content):
+  # protected
+  def _write(self, content):
     # break into block sized chunks
+    # finds open memory
     # for block in blocks
       # open stream
       # writes from stream until end
@@ -20,7 +27,8 @@ class File:
     pass
 
   # Returns the contents of the file from memory
-  def read(self):
+  # protected
+  def _read(self):
     # open stream
     # read from stream until end
     # close stream
@@ -28,16 +36,32 @@ class File:
     pass
 
   # Deletes the file from memory
-  def delete(self):
+  # protected
+  def _delete(self):
     # delete content from memory
     # delete inode from table
     pass
 
   # Returns a read stream to read bits chunk by chunk
-  def readStream(self):
+  # protected
+  def _readStream(self):
     pass
 
   # Returns a write stream to write bits chunk by chunk
-  def writeStream(self):
+  # protected
+  def _writeStream(self):
+    pass
+
+  # creates a new file, unsaved
+  # returns the inode for saving, if you want
+  def create(self, name):
+    self.name = name
+    self.inode = 'create empty inode'
+
+  # creates a new file object from an inode
+  def createFromInode(self, inode):
+    # if you forget about file (pretending it were persistent)
+      # find it's inode
+      # create a new file object from it
     pass
 

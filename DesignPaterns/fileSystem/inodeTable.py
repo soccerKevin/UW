@@ -34,3 +34,7 @@ class INodeTable:
   # returns all iNodes with the given ids
   def getInodes(self, ids):
     pass
+
+  # returns inodes matching search params
+  def searchInodes(self, name)
+    pass

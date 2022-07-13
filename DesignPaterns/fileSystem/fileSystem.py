@@ -1,6 +1,9 @@
 from file import File
 from directory import Directory
 
+# Handles input from the user, allowing them to manipulate files and directories
+# Handles auth/auth
+# searches for inodes (ergo files/directories)
 class FileSystem:
   def __init__(self):
     self.rootDirectory = Directory('/', 'r--r--r--')
@@ -50,5 +53,10 @@ class FileSystem:
   # Update the permissions on a file
   def chmod(self, filePath, permissions):
     pass
+
+  # returns an array of file objects matching given name
+  def find(self, fileName, path='./'):
+    # searches inode table for inodes with matching names inside the given path
+    # makes file objects from them
 
 filySystem = FileSystem()
