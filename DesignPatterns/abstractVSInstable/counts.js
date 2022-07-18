@@ -1,49 +1,65 @@
 const { existsSync, promises } = require('fs')
+const glob = require('glob')
 
-const path = require('path')
+const {
+  NEO4J_PATH,
+  SRC_PATH,
+  JAVA_PATH
+} = require('./const')
 
-const neo4jDir = path.join(__dirname, 'neo4j/community')
-
-const getFilesIn = async (path, type=null) => {
+const getFilesIn = async ({ path, match='/**', type=null }) => {
   let directories = null
 
-
-  if (!existsSync(path))
+  const statPath = path.slice(-1) == '/' ? path.slice(0, -1) : path
+  if (!existsSync(statPath)) {
     throw new Error('No such path')
+  }
 
-  const stat = await promises.lstat(path)
+  const stat = await promises.lstat(statPath)
   if (!stat.isDirectory())
     throw new Error('No such directory')
 
-  const files = await promises.readdir(path, { withFileTypes: true })
+  const filePaths = glob.sync(path + match)
 
   if (type == 'd')
-    return files.filter((file) => file.isDirectory()).map((dir) => dir.name)
-  if (type == 'f')
-    return files.filter((file) => !file.isDirectory()).map((dir) => dir.name)
+    return filePaths.filter(async (filePath) => {
+      const stat = await promises.lstat(filePath)
+      return stat.isDirectory()
+    })
 
-  return files.map((dir) => dir.name)
+  if (type == 'f')
+    return filePaths.filter(async (filePath) => {
+      const stat = await promises.lstat(filePath)
+      return !stat.isDirectory()
+    })
+
+  return filePaths
 }
 
-const javaPath = 'src/main/java/org/neo4j'
+const getModuleFiles = async (modulePath) => {
+  try {
+    const javaFiles = await getFilesIn({ path: modulePath, match: '**/**.java', type: 'f'})
+    const scalaFiles = await getFilesIn({ path: modulePath, match: '**/**.scala', type: 'f'})
+    const components = javaFiles.concat(scalaFiles)
+    return components
+  }
+  catch (err){
+    if (err.message == 'No such path')
+      console.log('No such path: ', modulePath)
+
+    else if (err.message == 'No such directory')
+      console.log('No such directory: ', modulePath)
+
+    else
+      console.log(err)
+  }
+}
 
 const run = async () => {
-  const modules = await getFilesIn(neo4jDir, 'd')
+  const modules = await getFilesIn({ path: NEO4J_PATH, match: '/*/', type: 'd' })
+  console.log('modules: ', modules)
 
-  modules.forEach(async (m) => {
-    const javaClassesDir = path.join(neo4jDir, m, javaPath)
-    try {
-      const components = await getFilesIn(javaClassesDir, 'f')
-      console.log(`${javaClassesDir}: `, components)
-    }
-    catch (err){
-      if (err.message == 'No such path')
-        console.log('No such path: ', javaClassesDir)
-
-      else if (err.message == 'No such directory')
-        console.log('No such directory: ', javaClassesDir)
-    }
-  })
+  modules.forEach(async (m) => getModuleFiles(m))
 }
 
 run()
