@@ -1,13 +1,14 @@
-const { existsSync, readFileSync, promises: fsPromises } = require('fs')
+
+const { existsSync, readFileSync, writeFileSync, promises: fsPromises } = require('fs')
 const { XMLParser } = require('fast-xml-parser')
-var _ = require('lodash');
+const _ = require('lodash');
 const xmlParser = new XMLParser()
 const glob = require('glob')
 const Bluebird = require('bluebird')
-
 const nodePath = require('path')
 const NEO4J_PATH = nodePath.join(__dirname, 'neo4j/community')
 
+const csvFile = 'abstractnessVsInstability.csv'
 const modulesFinal = {}
 const incomingDependencies = {}
 const outgoingDependencies = {}
@@ -44,8 +45,8 @@ const getFilesIn = async ({ path, match='/**', type=null }) => {
 
 const getModuleCodeFiles = async (modulePath) => {
   try {
-    const javaFiles = await getFilesIn({ path: modulePath, match: '**/**.java', type: 'f'})
-    const scalaFiles = await getFilesIn({ path: modulePath, match: '**/**.scala', type: 'f'})
+    const javaFiles = await getFilesIn({ path: modulePath, match: '**/**.java', type: 'f' })
+    const scalaFiles = await getFilesIn({ path: modulePath, match: '**/**.scala', type: 'f' })
     const files = javaFiles.concat(scalaFiles)
     return files
   }
@@ -80,27 +81,25 @@ const moduleAbstractness = async (modulePath) => {
 
   const abstractCount = files.filter((f) => f.isAbstract).length
   const concreteCount = files.length - abstractCount
-  const abstractness = abstractCount / concreteCount
+  const abstractness = abstractCount / files.length
   return { abstractCount, concreteCount, abstractness }
 }
 
 const setModuleDepencies = async (modulePath) => {
-  const pomFiles = await getFilesIn({ path: modulePath, match: '**/pom.xml', type: 'f'})
+  const pomFiles = await getFilesIn({ path: modulePath, match: '**/pom.xml', type: 'f' })
   const xml = getFileContents(pomFiles[0])
   const parsedXML = xmlParser.parse(xml)
 
   const dependencies = [parsedXML.project.dependencies.dependency].flat()
   const artifactIds = dependencies.map((d) => d.artifactId.replace('neo4j-', ''))
-  console.log('artifactIds: ', artifactIds)
   const name = getModuleName(modulePath)
-  modulesFinal[name].incomingDependencies = [artifactIds]
+  modulesFinal[name].incomingDependencies = modulesFinal[name].incomingDependencies.concat(artifactIds)
 
   artifactIds.forEach((dependency) => {
     if (!modulesFinal[dependency]) return
-    modulesFinal[dependency].outgoingDependencies.push(name)
+    if (modulesFinal[dependency].outgoingDependencies.indexOf(name) < 0)
+      modulesFinal[dependency].outgoingDependencies.push(name)
   })
-  // console.log('artifactIds: ', artifactIds)
-  // console.log('parsedXML: ', parsedXML)
 }
 
 const getModuleName = (modulePath) => modulePath.split('/').slice(-2, -1)[0].replace('neo4j-', '')
@@ -116,18 +115,30 @@ const run = async () => {
 
   await Bluebird.map(modules, async (mPath) => {
     const name = getModuleName(mPath)
-    setModuleDepencies(mPath)
-    const { abstractCount, concreteCount, abstractness } = await moduleAbstractness(mPath)
-    const mf = modulesFinal[name]
-    mf.abstractCount = abstractCount
-    mf.concreteCount = concreteCount
-    mf.abstractness = abstractness
+    await setModuleDepencies(mPath)
+    const abstractness = await moduleAbstractness(mPath)
+    mf = { ...modulesFinal[name], ...abstractness }
     const inDep = _.uniq(mf['incomingDependencies']).length
     const outDep = _.uniq(mf['outgoingDependencies']).length
     mf.instability = inDep / (inDep + outDep)
+    modulesFinal[name] = mf
   })
 
-  console.log('modulesFinal: ', modulesFinal)
+  // console.log('modulesFinal: ', modulesFinal)
+
+  let chartData = Object.entries(modulesFinal).map(([name, { abstractness, instability }]) => {
+    return { name, abstractness, instability }
+  })
+
+  chartData = chartData.filter((cd) => !['zstd-proxy', 'community'].includes(cd.name))
+
+  console.log('chartData: ', chartData)
+  const csvData = chartData.map(({ name, abstractness, instability }) => name + ', ' + abstractness + ', ' + instability).join('\r\n')
+  const header = 'Name, Abstractness, Instability \r\n'
+  const csvText = header + csvData
+  console.log('csvText: ', csvText)
+
+  writeFileSync(csvFile, csvText)
 }
 
 run()
