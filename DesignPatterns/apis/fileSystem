@@ -1,0 +1,8 @@
+Get  file/:id
+Post file
+Put  file/:id
+Delete file/:id
+
+Get  dir/:id
+Post dir
+Delete dir/:id

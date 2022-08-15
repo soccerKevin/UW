@@ -1,0 +1,29 @@
+/user/:id/profile (get)
+/user/:id/profile (put)
+/user/profile     (post)
+/user             (post)
+
+/creditCard/:id (get)
+/creditCard     (post)
+/creditCard/:id (put)
+/creditCard/:id (delete)
+
+/bankAccount/:id (get)
+/bankAccount     (post)
+/bankAccount/:id (put)
+/bankAccount/:id (delete)
+
+/address/:id (get)
+/address     (post)
+/address/:id (put)
+/address/:id (delete)
+
+/merchant/:id (get)
+/merchant     (post)
+/merchant/:id (put)
+/merchant/:id (delete)
+
+/asset/:id (get)
+/asset     (post)
+/asset/:id (put)
+/asset/:id (delete)
